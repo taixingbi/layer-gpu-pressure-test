@@ -15,7 +15,7 @@ done
 ### gateway
 
 ```bash
-for p in 60 80 100 120; do
+for p in 20 40 60 80 100 120; do
   echo "=== concurrency $p ==="
   seq 1 200 | xargs -I{} -P $p sh -c '
     curl -s -o /dev/null -w "%{http_code}\n" http://192.168.86.179:8010/v1/chat/completions \
