@@ -14,7 +14,7 @@ for p in 60 80 100 120; do
 done
 ```
 
-### gateway
+### gateway-inference
 
 ```bash
 for p in 20 40 60 80 100 120; do
@@ -29,7 +29,7 @@ done
 ```
 
 
-## embed
+## gate-embed
 ```bash
 for p in 20 40 60 80 100 120; do
   echo "=== concurrency $p ==="
