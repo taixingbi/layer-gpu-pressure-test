@@ -20,7 +20,7 @@ done
 for p in 20 40 60; do
   echo "=== concurrency $p ==="
   seq 1 200 | xargs -I{} -P $p sh -c '
-    curl -s -o /dev/null -w "%{http_code}\n" http://192.168.86.179:8010/v1/chat/completions \
+    curl -s -o /dev/null -w "%{http_code}\n" http://192.168.86.179:30180/v1/chat/completions \
       -H "Content-Type: application/json" \
       -d "{\"model\":\"Qwen/Qwen2.5-7B-Instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"introduce new york city\"}],
 \"max_tokens\":256}"
