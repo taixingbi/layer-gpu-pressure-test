@@ -17,6 +17,7 @@ done
 ### gateway-inference
 
 ```bash
+# dev
 for p in 20 40 60; do
   echo "=== concurrency $p ==="
   seq 1 200 | xargs -I{} -P $p sh -c '
@@ -26,7 +27,7 @@ for p in 20 40 60; do
 \"max_tokens\":256}"
   ' | sort | uniq -c
 done
-
+# prod
 for p in 20 40 60; do
   echo "=== concurrency $p ==="
   seq 1 200 | xargs -I{} -P $p sh -c '
