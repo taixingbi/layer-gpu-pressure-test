@@ -72,6 +72,7 @@ LARGE='{"model":"Qwen/Qwen2.5-7B-Instruct","messages":[{"role":"user","content":
 ) &
 
 wait
+```
 
 ## gate-embed
 ```bash
