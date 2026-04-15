@@ -125,4 +125,47 @@ for p in 20 60 100 140 180; do
 done
 ```
 
+```bash
+# mixed large 
+URL="http://192.168.86.179:8011/v1/embeddings"
+
+HEADERS=(
+  -H "Content-Type: application/json"
+  -H "X-Internal-Key: 1234"
+  -H "X-Request-Id: request_id_1"
+  -H "X-Session-Id: session_id_1"
+)
+
+SMALL_PAYLOAD='{"model":"BAAI/bge-m3","input":"New York City comprises 5 boroughs sitting where the Hudson River meets the Atlantic Ocean. At its core is Manhattan, a densely populated borough that is among the world'\''s major commercial, financial, and cultural centers. Its iconic sites include skyscrapers such as the Empire State Building and sprawling Central Park. Broadway theater is staged in neon-lit Times Square."}'
+
+LARGE_TEXT=$(python3 - <<'PY'
+text = """
+New York City is one of the most dynamic and influential urban centers in the world, known for its diversity, cultural significance, and economic power. The city comprises five boroughs: Manhattan, Brooklyn, Queens, the Bronx, and Staten Island. Each borough has its own unique identity, history, and role within the broader metropolitan area.
+"""
+words = text.split()
+target = 5000
+result = (words * (target // len(words) + 1))[:target]
+print(" ".join(result))
+PY
+)
+
+LARGE_PAYLOAD=$(jq -n --arg input "$LARGE_TEXT" '{model:"BAAI/bge-m3", input:$input}')
+
+for p in 20 60 100 140 180; do
+  echo "=== SMALL concurrency $p ==="
+  seq 200 | xargs -P "$p" -I{} \
+    curl -s -o /dev/null -w "%{http_code}\n" \
+    "$URL" "${HEADERS[@]}" \
+    -d "$SMALL_PAYLOAD" \
+  | sort | uniq -c
+
+  echo "=== LARGE concurrency $p ==="
+  seq 200 | xargs -P "$p" -I{} \
+    curl -s -o /dev/null -w "%{http_code}\n" \
+    "$URL" "${HEADERS[@]}" \
+    -d "$LARGE_PAYLOAD" \
+  | sort | uniq -c
+done
+```
+
 
