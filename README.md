@@ -97,6 +97,7 @@ done
 ```bash
 # large 
 URL="http://192.168.86.179:8011/v1/embeddings"
+URL="http://localhost:30181/v1/embeddings"
 
 HEADERS=(
   -H "Content-Type: application/json"
@@ -128,6 +129,7 @@ done
 ```bash
 # mixed large 
 URL="http://192.168.86.179:30181/v1/embeddings"
+URL="http://localhost:30181/v1/embeddings"
 
 HEADERS=(
   -H "Content-Type: application/json"
