@@ -101,7 +101,7 @@ URL="http://localhost:30181/v1/embeddings"
 
 HEADERS=(
   -H "Content-Type: application/json"
-  -H "X-Internal-Key: 1234"
+  -H "X-Trace-Id: trace_id_1"
   -H "X-Request-Id: request_id_1"
   -H "X-Session-Id: session_id_1"
 )
@@ -133,7 +133,7 @@ URL="http://localhost:30181/v1/embeddings"
 
 HEADERS=(
   -H "Content-Type: application/json"
-  -H "X-Internal-Key: 1234"
+  -H "X-Trace-Id: trace_id_1"
   -H "X-Request-Id: request_id_1"
   -H "X-Session-Id: session_id_1"
 )
