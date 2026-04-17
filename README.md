@@ -84,9 +84,9 @@ done
 for p in 20 60 100 140 180; do
   echo "=== concurrency $p ==="
   seq 1 200 | xargs -I{} -P $p sh -c '
-    curl -s -o /dev/null -w "%{http_code}\n" http://192.168.86.179:8011/v1/embeddings \
+    curl -s -o /dev/null -w "%{http_code}\n" http://localhost:30181/v1/embeddings \
       -H "Content-Type: application/json" \
-      -H "X-Internal-Key: 1234" \
+      -H "X-Trace-Id: trace_id_1"
       -H "X-Request-Id: request_id_1" \
       -H "X-Session-Id: session_id_1" \
       -d "{\"model\":\"BAAI/bge-m3\",\"input\":\"New York City comprises 5 boroughs sitting where the Hudson River meets the Atlantic Ocean. At its core is Manhattan, a densely populated borough that’s among the world’s major commercial, financial and cultural centers. Its iconic sites include skyscrapers such as the Empire State Building and sprawling Central Park. Broadway theater is staged in neon-lit Times Square\"}"
@@ -96,7 +96,7 @@ done
 
 ```bash
 # large 
-URL="http://192.168.86.179:8011/v1/embeddings"
+URL="http://192.168.86.179:30181/v1/embeddings"
 URL="http://localhost:30181/v1/embeddings"
 
 HEADERS=(
