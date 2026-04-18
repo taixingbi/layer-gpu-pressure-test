@@ -36,8 +36,7 @@ done
 
 ```bash
 # large
-URL="http://localhost:30181/v1/embeddings"
-# URL="http://192.168.86.179:30181/v1/embeddings"
+URL="http://192.168.86.179:30181/v1/embeddings"
 PAYLOAD=$(cat <<'EOF'
 {
   "model": "BAAI/bge-m3",
@@ -61,8 +60,7 @@ done
 
 ```bash
 # mixed large
-URL="http://localhost:30181/v1/embeddings"
-# URL="http://192.168.86.179:30181/v1/embeddings"
+URL="http://192.168.86.179:30181/v1/embeddings"
 SMALL_PAYLOAD='{"model":"BAAI/bge-m3","input":"New York City comprises 5 boroughs sitting where the Hudson River meets the Atlantic Ocean. At its core is Manhattan, a densely populated borough that is among the world'\''s major commercial, financial, and cultural centers. Its iconic sites include skyscrapers such as the Empire State Building and sprawling Central Park. Broadway theater is staged in neon-lit Times Square."}'
 LARGE_TEXT=$(python3 - <<'PY'
 text = """
