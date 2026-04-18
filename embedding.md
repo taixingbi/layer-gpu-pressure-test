@@ -8,6 +8,13 @@ curl -X POST http://localhost:30181/v1/embeddings \
   -H "X-Session-Id: session_id_1" \
   -H "Content-Type: application/json" \
   -d '{"model":"BAAI/bge-m3","input":"hello world"}'
+
+curl -X POST http://192.168.86.179:30181/v1/embeddings \
+  -H "X-Request-Id: request_id_1" \
+  -H "X-Trace-Id: trace_id_1" \
+  -H "X-Session-Id: session_id_1" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"BAAI/bge-m3","input":"hello world"}'
 ```
 
 ```bash
