@@ -19,8 +19,7 @@ curl -X POST http://192.168.86.179:30181/v1/embeddings \
 
 ```bash
 # small
-URL="http://localhost:30181/v1/embeddings"
-# URL="http://192.168.86.179:30181/v1/embeddings"
+URL="http://192.168.86.179:30181/v1/embeddings"
 export URL
 for p in 20 60 100 140 180; do
   echo "=== concurrency $p ==="
