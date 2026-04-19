@@ -71,7 +71,7 @@ BACKENDS=(
   "http://192.168.86.176:8001"
 )
 
-SIZES=(500 1000 1500 2000 2500 3000)
+SIZES=(1000 2000 3000 4000)
 
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
 INPUT_FILE=/tmp/vllm_embed_input.txt
