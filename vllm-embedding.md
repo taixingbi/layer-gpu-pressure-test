@@ -44,6 +44,13 @@ e2e=0.106381s
 ## Load tests (prebuilt JSON — no per-request Python)
 
 ```bash
+cat >/tmp/bench_embed.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+############################################
+# percentile
+############################################
 percentile_99() {
   sort -n | awk '
     { a[NR] = $1 }
@@ -51,46 +58,95 @@ percentile_99() {
       if (NR == 0) { print "NA"; exit }
       idx = int(NR * 0.99)
       if (idx < 1) idx = 1
+      if (idx > NR) idx = NR
       print a[idx]
     }'
 }
 
+############################################
+# config
+############################################
 BACKENDS=(
   "http://192.168.86.173:8001"
   "http://192.168.86.176:8001"
 )
 
+SIZES=(500 1000 1500 2000 2500 3000)
+
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
 INPUT_FILE=/tmp/vllm_embed_input.txt
-SMALL_PAYLOAD=/tmp/vllm_embed_small.json
-LARGE_PAYLOAD=/tmp/vllm_embed_large.json
+PAYLOAD=/tmp/vllm_embed.json
 
-# --- small payload (~2k chars), 100 reqs @ concurrency 20 ---
-curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c 2000 >"$INPUT_FILE"
-python3 - <<'PY'
+TOTAL=100
+CONCURRENCY=20
+
+############################################
+# fetch source once
+############################################
+echo "Fetching source..."
+RAW=/tmp/wiki_raw.txt
+curl -fsSL "$SOURCE_URL" \
+  | lynx -dump -stdin \
+  | iconv -f utf-8 -t utf-8 -c > "$RAW"
+
+############################################
+# loop sizes
+############################################
+for SIZE in "${SIZES[@]}"; do
+  echo ""
+  echo "================ SIZE=${SIZE} ================="
+
+  head -c "$SIZE" "$RAW" > "$INPUT_FILE"
+
+  raw_chars=$(wc -c < "$INPUT_FILE" | tr -d ' ')
+  tokens=$(( raw_chars / 4 ))
+
+  echo "chars=$raw_chars approx_tokens=$tokens"
+
+  ############################################
+  # build payload
+  ############################################
+  python3 - <<PY
 import json
 
-with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
-    payload = {"model": "BAAI/bge-m3", "input": f.read()}
-with open("/tmp/vllm_embed_small.json", "w", encoding="utf-8") as out:
+with open("$INPUT_FILE", "r", encoding="utf-8", errors="ignore") as f:
+    text = f.read()
+
+payload = {"model": "BAAI/bge-m3", "input": text}
+
+with open("$PAYLOAD", "w", encoding="utf-8") as out:
     json.dump(payload, out)
 PY
 
-for ENDPOINT in "${BACKENDS[@]}"; do
-  tmpfile=$(mktemp)
-  seq 1 100 | xargs -P 20 -I{} bash -c '
-    curl -sS -o /dev/null \
-      -w "%{time_starttransfer} %{time_total}\n" \
-      -X POST "$1/v1/embeddings" \
-      -H "Content-Type: application/json" \
-      --data-binary @'"$SMALL_PAYLOAD"'
-  ' _ "$ENDPOINT" >"$tmpfile"
+  ############################################
+  # test each backend
+  ############################################
+  for ENDPOINT in "${BACKENDS[@]}"; do
+    tmpfile=$(mktemp)
 
-  p99_ttfb=$(awk '{ print $1 }' "$tmpfile" | percentile_99)
-  p99_e2e=$(awk '{ print $2 }' "$tmpfile" | percentile_99)
-  echo "backend=$ENDPOINT p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
-  rm -f "$tmpfile"
+    seq 1 $TOTAL | xargs -P $CONCURRENCY -I{} bash -c '
+      curl -sS -o /dev/null \
+        -w "%{time_starttransfer} %{time_total}\n" \
+        -X POST "$1/v1/embeddings" \
+        -H "Content-Type: application/json" \
+        --data-binary @"$2"
+    ' _ "$ENDPOINT" "$PAYLOAD" > "$tmpfile"
+
+    p99_ttfb=$(awk '{print $1}' "$tmpfile" | percentile_99)
+    p99_e2e=$(awk '{print $2}' "$tmpfile" | percentile_99)
+
+    echo "backend=$ENDPOINT size=$SIZE tokens=$tokens p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+
+    rm -f "$tmpfile"
+  done
 done
+
+rm -f "$INPUT_FILE" "$PAYLOAD" "$RAW"
+
+echo "Done."
+EOF
+
+bash /tmp/bench_embed.sh
 ```
 
 Sample output:
