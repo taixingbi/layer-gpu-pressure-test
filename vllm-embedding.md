@@ -41,7 +41,7 @@ ttfb=0.090159s
 e2e=0.106381s
 ```
 
-## Load tests (prebuilt JSON — no per-request Python)
+## test max tokens
 
 ```bash
 cat >/tmp/bench_embed.sh <<'EOF'
@@ -173,7 +173,7 @@ backend=http://192.168.86.173:8001 p99_ttfb=0.112582s p99_e2e=0.124809s
 backend=http://192.168.86.176:8001 p99_ttfb=0.379105s p99_e2e=0.651485s
 ```
 
-## Large input load (8k chars, 500 reqs @ concurrency 80)
+## test concurrent
 
 ```bash
 percentile_99() {
