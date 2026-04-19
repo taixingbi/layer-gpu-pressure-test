@@ -71,7 +71,7 @@ BACKENDS=(
   "http://192.168.86.176:8001"
 )
 
-SIZES=(5000 10000 15000 20000)
+SIZES=(5000 10000 15000 30000)
 
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
 INPUT_FILE=/tmp/vllm_embed_input.txt
@@ -126,16 +126,33 @@ PY
 
     seq 1 $TOTAL | xargs -P $CONCURRENCY -I{} bash -c '
       curl -sS -o /dev/null \
-        -w "%{time_starttransfer} %{time_total}\n" \
+        -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
         -X POST "$1/v1/embeddings" \
         -H "Content-Type: application/json" \
         --data-binary @"$2"
     ' _ "$ENDPOINT" "$PAYLOAD" > "$tmpfile"
 
-    p99_ttfb=$(awk '{print $1}' "$tmpfile" | percentile_99)
-    p99_e2e=$(awk '{print $2}' "$tmpfile" | percentile_99)
+    ############################################
+    # latency for HTTP 200 only
+    ############################################
+    p99_ttfb=$(awk '$1 == 200 {print $2}' "$tmpfile" | percentile_99)
+    p99_e2e=$(awk '$1 == 200 {print $3}' "$tmpfile" | percentile_99)
 
-    echo "backend=$ENDPOINT size=$SIZE tokens=$tokens p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+    ############################################
+    # status code counts
+    ############################################
+    total=$(wc -l < "$tmpfile" | tr -d ' ')
+    success=$(awk '$1 == 200' "$tmpfile" | wc -l | tr -d ' ')
+    rate_limit=$(awk '$1 == 429' "$tmpfile" | wc -l | tr -d ' ')
+    server_err=$(awk '$1 ~ /^5/' "$tmpfile" | wc -l | tr -d ' ')
+    other=$(awk '$1 != 200 && $1 != 429 && $1 !~ /^5/' "$tmpfile" | wc -l | tr -d ' ')
+
+    success_rate=$(awk -v s="$success" -v t="$total" 'BEGIN {
+      if (t == 0) print "0.00";
+      else printf "%.2f", (s/t)*100
+    }')
+
+    echo "backend=$ENDPOINT size=$SIZE tokens=$tokens total=$total success=$success success_rate=${success_rate}% 429=$rate_limit 5xx=$server_err other=$other p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
     rm -f "$tmpfile"
   done
