@@ -48,9 +48,6 @@ cat >/tmp/bench_embed.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-############################################
-# percentile
-############################################
 percentile_99() {
   sort -n | awk '
     { a[NR] = $1 }
@@ -63,15 +60,12 @@ percentile_99() {
     }'
 }
 
-############################################
-# config
-############################################
 BACKENDS=(
   "http://192.168.86.173:8001"
   "http://192.168.86.176:8001"
 )
 
-SIZES=(5000 10000 15000 30000)
+SIZES=(5000 10000 13000 15000 30000)
 
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
 INPUT_FILE=/tmp/vllm_embed_input.txt
@@ -80,18 +74,12 @@ PAYLOAD=/tmp/vllm_embed.json
 TOTAL=100
 CONCURRENCY=20
 
-############################################
-# fetch source once
-############################################
 echo "Fetching source..."
 RAW=/tmp/wiki_raw.txt
 curl -fsSL "$SOURCE_URL" \
   | lynx -dump -stdin \
   | iconv -f utf-8 -t utf-8 -c > "$RAW"
 
-############################################
-# loop sizes
-############################################
 for SIZE in "${SIZES[@]}"; do
   echo ""
   echo "================ SIZE=${SIZE} ================="
@@ -101,11 +89,6 @@ for SIZE in "${SIZES[@]}"; do
   raw_chars=$(wc -c < "$INPUT_FILE" | tr -d ' ')
   tokens=$(( raw_chars / 4 ))
 
-  echo "chars=$raw_chars approx_tokens=$tokens"
-
-  ############################################
-  # build payload
-  ############################################
   python3 - <<PY
 import json
 
@@ -118,9 +101,6 @@ with open("$PAYLOAD", "w", encoding="utf-8") as out:
     json.dump(payload, out)
 PY
 
-  ############################################
-  # test each backend
-  ############################################
   for ENDPOINT in "${BACKENDS[@]}"; do
     tmpfile=$(mktemp)
 
@@ -132,34 +112,20 @@ PY
         --data-binary @"$2"
     ' _ "$ENDPOINT" "$PAYLOAD" > "$tmpfile"
 
-    ############################################
-    # latency for HTTP 200 only
-    ############################################
+    success=$(awk '$1 == 200 {c++} END {print c+0}' "$tmpfile")
+    total=$(wc -l < "$tmpfile" | tr -d ' ')
+    errors=$(( total - success ))
+
     p99_ttfb=$(awk '$1 == 200 {print $2}' "$tmpfile" | percentile_99)
     p99_e2e=$(awk '$1 == 200 {print $3}' "$tmpfile" | percentile_99)
 
-    ############################################
-    # status code counts
-    ############################################
-    total=$(wc -l < "$tmpfile" | tr -d ' ')
-    success=$(awk '$1 == 200' "$tmpfile" | wc -l | tr -d ' ')
-    rate_limit=$(awk '$1 == 429' "$tmpfile" | wc -l | tr -d ' ')
-    server_err=$(awk '$1 ~ /^5/' "$tmpfile" | wc -l | tr -d ' ')
-    other=$(awk '$1 != 200 && $1 != 429 && $1 !~ /^5/' "$tmpfile" | wc -l | tr -d ' ')
-
-    success_rate=$(awk -v s="$success" -v t="$total" 'BEGIN {
-      if (t == 0) print "0.00";
-      else printf "%.2f", (s/t)*100
-    }')
-
-    echo "backend=$ENDPOINT size=$SIZE tokens=$tokens total=$total success=$success success_rate=${success_rate}% 429=$rate_limit 5xx=$server_err other=$other p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+    echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
     rm -f "$tmpfile"
   done
 done
 
 rm -f "$INPUT_FILE" "$PAYLOAD" "$RAW"
-
 echo "Done."
 EOF
 
