@@ -201,6 +201,12 @@ INPUT_FILE=/tmp/vllm_embed_input.txt
 LARGE_PAYLOAD=/tmp/vllm_embed_large.json
 
 curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" >"$INPUT_FILE"
+
+raw_chars=$(wc -c <"$INPUT_FILE" | tr -d ' ')
+approx_tokens=$(( raw_chars / 4 ))
+
+echo "input_chars=$raw_chars approx_tokens=$approx_tokens"
+
 python3 - <<'PY'
 import json
 
@@ -227,7 +233,7 @@ for ENDPOINT in "${BACKENDS[@]}"; do
   p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
   p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
 
-  echo "backend=$ENDPOINT total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
   rm -f "$tmpfile"
 done
 ```
@@ -235,6 +241,7 @@ done
 Sample output:
 
 ```
-backend=http://192.168.86.173:8001 total=500 success=500 errors=0 p99_ttfb=2.728527s p99_e2e=2.741782s
-backend=http://192.168.86.176:8001 total=500 success=500 errors=0 p99_ttfb=2.670169s p99_e2e=2.683632s
+input_chars=8000 approx_tokens=2000
+backend=http://192.168.86.173:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.810370s p99_e2e=2.823406s
+backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.713273s p99_e2e=2.727671s
 ```
