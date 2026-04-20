@@ -10,7 +10,7 @@ curl -sS -o /tmp/embed_resp.json \
   -H "Content-Type: application/json" \
   -d '{"model":"BAAI/bge-m3","input":"hello world"}'
 ```
-### ================ SMALL TEST ================
+#### ================ SMALL TEST ================
 
 ```bash
 percentile_99() {
@@ -114,7 +114,7 @@ http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.613822s p99
 http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
 ```
 
-### ================ LARGE TEST ================
+#### ================ LARGE TEST ================
 
 
 
