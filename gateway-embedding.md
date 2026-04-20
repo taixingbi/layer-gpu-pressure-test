@@ -62,19 +62,21 @@ for text_path, payload_path in pairs:
         json.dump(payload, out)
 PY
 
-for ENDPOINT in "${BACKENDS[@]}"; do
+for SIZE in small large; do
+  if [ "$SIZE" = "small" ]; then
+    PAYLOAD_FILE=$SMALL_PAYLOAD_FILE
+  else
+    PAYLOAD_FILE=$LARGE_PAYLOAD_FILE
+  fi
+
   echo "=================================================="
-  echo "backend=$ENDPOINT"
+  echo "size=$SIZE"
   echo "=================================================="
 
-  for SIZE in small large; do
-    if [ "$SIZE" = "small" ]; then
-      PAYLOAD_FILE=$SMALL_PAYLOAD_FILE
-    else
-      PAYLOAD_FILE=$LARGE_PAYLOAD_FILE
-    fi
+  for P in "${CONCURRENCY_LEVELS[@]}"; do
+    echo "concurrency=$P"
 
-    for P in "${CONCURRENCY_LEVELS[@]}"; do
+    for ENDPOINT in "${BACKENDS[@]}"; do
       tmpfile=$(mktemp)
 
       seq 1 "$TOTAL_REQUESTS" | xargs -P "$P" -I{} bash -c '
@@ -90,19 +92,21 @@ for ENDPOINT in "${BACKENDS[@]}"; do
           -H "X-Session-Id: session_id_${req_id}" \
           -H "Content-Type: application/json" \
           --data-binary @"${payload_file}"
-      ' _ "$ENDPOINT" "$PAYLOAD_FILE" "{}" >"$tmpfile"
+      ' _ "$ENDPOINT" "$PAYLOAD_FILE" "{}" >"$tmpfile" 2>/dev/null
 
       success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
       total=$(wc -l <"$tmpfile" | tr -d " ")
-      errors=$((total - success))
+      errors=$((TOTAL_REQUESTS - success))
 
       p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
       p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
 
-      echo "size=$SIZE concurrency=$P total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+      echo "$ENDPOINT size=$SIZE total=$TOTAL_REQUESTS success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
       rm -f "$tmpfile"
     done
+
+    echo
   done
 done
 ```
