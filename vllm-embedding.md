@@ -135,11 +135,28 @@ bash /tmp/bench_embed.sh
 Sample output:
 
 ```
-backend=http://192.168.86.173:8001 p99_ttfb=0.112582s p99_e2e=0.124809s
-backend=http://192.168.86.176:8001 p99_ttfb=0.379105s p99_e2e=0.651485s
+================ SIZE=5000 =================
+backend=http://192.168.86.173:8001 input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_ttfb=0.413656s p99_e2e=0.430946s
+backend=http://192.168.86.176:8001 input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_ttfb=0.389468s p99_e2e=0.401716s
+
+================ SIZE=10000 =================
+backend=http://192.168.86.173:8001 input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_ttfb=1.031882s p99_e2e=1.043016s
+backend=http://192.168.86.176:8001 input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_ttfb=0.962121s p99_e2e=0.971111s
+
+================ SIZE=13000 =================
+backend=http://192.168.86.173:8001 input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
+
+================ SIZE=15000 =================
+backend=http://192.168.86.173:8001 input_chars=15000 approx_tokens=3750 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 input_chars=15000 approx_tokens=3750 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
+
+================ SIZE=30000 =================
+backend=http://192.168.86.173:8001 input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
 ```
 
-## test concurrent
+## test concurrent with large tokens ->  max-num-seqs
 
 ```bash
 percentile_99() {
@@ -215,7 +232,7 @@ backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500
 
 
 
-## test concurrent ->  max-num-seqs
+## test concurrent with small tokens ->  max-num-seqs
 
 ```bash
 percentile_99() {
