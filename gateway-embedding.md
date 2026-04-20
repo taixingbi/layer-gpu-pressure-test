@@ -86,43 +86,29 @@ done
 Sample output (reference):
 
 ```
-==================================================
-backend=http://192.168.86.173:8001
-==================================================
-size=small concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.376683s p99_e2e=0.394993s
-size=small concurrency=60 total=200 success=200 errors=0 p99_ttfb=0.333300s p99_e2e=0.350056s
-size=small concurrency=100 total=200 success=200 errors=0 p99_ttfb=0.490026s p99_e2e=0.508706s
-size=small concurrency=140 total=200 success=200 errors=0 p99_ttfb=0.624375s p99_e2e=0.639639s
-size=small concurrency=180 total=200 success=200 errors=0 p99_ttfb=0.612121s p99_e2e=0.661927s
-size=large concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.688027s p99_e2e=0.705028s
-size=large concurrency=60 total=200 success=200 errors=0 p99_ttfb=2.039125s p99_e2e=2.053958s
-size=large concurrency=100 total=200 success=200 errors=0 p99_ttfb=3.497601s p99_e2e=3.510997s
-size=large concurrency=140 total=200 success=200 errors=0 p99_ttfb=4.867124s p99_e2e=4.878599s
-size=large concurrency=180 total=200 success=200 errors=0 p99_ttfb=6.244714s p99_e2e=6.256547s
-==================================================
-backend=http://192.168.86.176:8001
-==================================================
-size=small concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.321783s p99_e2e=0.339625s
-size=small concurrency=60 total=200 success=200 errors=0 p99_ttfb=0.313291s p99_e2e=0.337063s
-size=small concurrency=100 total=200 success=200 errors=0 p99_ttfb=0.495481s p99_e2e=0.515035s
-size=small concurrency=140 total=200 success=200 errors=0 p99_ttfb=0.590922s p99_e2e=0.606990s
-size=small concurrency=180 total=200 success=200 errors=0 p99_ttfb=0.613544s p99_e2e=0.628951s
-size=large concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.679921s p99_e2e=0.706791s
-size=large concurrency=60 total=200 success=200 errors=0 p99_ttfb=1.998662s p99_e2e=2.011512s
-size=large concurrency=100 total=200 success=200 errors=0 p99_ttfb=3.421086s p99_e2e=3.433411s
-size=large concurrency=140 total=200 success=200 errors=0 p99_ttfb=4.754347s p99_e2e=4.767100s
-size=large concurrency=180 total=200 success=200 errors=0 p99_ttfb=6.076810s p99_e2e=6.088401s
-==================================================
-backend=http://192.168.86.179:30181
-==================================================
-size=small concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.201925s p99_e2e=0.342093s
-size=small concurrency=60 total=200 success=200 errors=0 p99_ttfb=0.488511s p99_e2e=1.137211s
-size=small concurrency=100 total=200 success=200 errors=0 p99_ttfb=1.044371s p99_e2e=1.507703s
-size=small concurrency=140 total=200 success=200 errors=0 p99_ttfb=3.321560s p99_e2e=3.353747s
-size=small concurrency=180 total=200 success=200 errors=0 p99_ttfb=1.113142s p99_e2e=1.540295s
-size=large concurrency=20 total=200 success=200 errors=0 p99_ttfb=0.668183s p99_e2e=0.700451s
-size=large concurrency=60 total=200 success=200 errors=0 p99_ttfb=2.006971s p99_e2e=2.032522s
-size=large concurrency=100 total=200 success=200 errors=0 p99_ttfb=3.422610s p99_e2e=3.447401s
-size=large concurrency=140 total=200 success=153 errors=47 p99_ttfb=4.143739s p99_e2e=4.172981s
-size=large concurrency=180 total=200 success=137 errors=63 p99_ttfb=4.130601s p99_e2e=4.156007s
+================ SMALL TEST ================
+concurrency=20
+http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.174752s p99_e2e=0.187715s
+http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.540942s p99_e2e=0.629698s
+http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+
+concurrency=60
+http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.313707s p99_e2e=0.327615s
+http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.318511s p99_e2e=0.351055s
+http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+
+concurrency=100
+http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.525701s p99_e2e=0.542246s
+http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.515646s p99_e2e=0.529888s
+http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+
+concurrency=140
+http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.654717s p99_e2e=0.665506s
+http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.586319s p99_e2e=0.597465s
+http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+
+concurrency=180
+http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.750949s p99_e2e=0.763222s
+http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.613822s p99_e2e=0.625734s
+http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
 ```
