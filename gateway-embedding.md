@@ -265,9 +265,9 @@ rm -f "$INPUT_FILE" "$PAYLOAD"
 ```
 
 ```
-backend=http://192.168.86.173:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.050657s p99_ttfb=0.110533s p99_e2e=0.243068s
-backend=http://192.168.86.176:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.141611s p99_ttfb=0.276727s p99_e2e=0.715379s
-backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.308159s p99_ttfb=0.630069s p99_e2e=1.019490s
+backend=http://192.168.86.173:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.055695s p99_ttfb=0.129506s p99_e2e=0.175862s
+backend=http://192.168.86.176:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.139316s p99_ttfb=0.276383s p99_e2e=0.542203s
+backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.483424s p99_ttfb=0.743324s p99_e2e=1.023086s
 ```
 
 
