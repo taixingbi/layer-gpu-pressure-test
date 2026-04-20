@@ -218,9 +218,6 @@ backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500
 ## test concurrent ->  max-num-seqs
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
 percentile_99() {
   sort -n | awk '
     { a[NR] = $1 }
@@ -238,49 +235,49 @@ BACKENDS=(
 )
 
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
+TOTAL_REQUESTS=500
+CONCURRENCY=80
+INPUT_CHARS=300
+
 INPUT_FILE=/tmp/vllm_embed_input.txt
-SMALL_PAYLOAD=/tmp/vllm_embed_small.json
+PAYLOAD=/tmp/vllm_embed.json
 
-# --- small payload (~2k chars), 100 reqs @ concurrency 20 ---
-curl -fsSL "$SOURCE_URL" \
-  | lynx -dump -stdin \
-  | iconv -f utf-8 -t utf-8 -c \
-  | head -c 2000 > "$INPUT_FILE"
+curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" >"$INPUT_FILE"
 
-raw_chars=$(wc -c < "$INPUT_FILE" | tr -d ' ')
-estimated_tokens=$(( raw_chars / 4 ))
-echo "raw_chars=$raw_chars estimated_tokens=$estimated_tokens"
+raw_chars=$(wc -c <"$INPUT_FILE" | tr -d ' ')
+approx_tokens=$(( raw_chars / 4 ))
 
 python3 - <<'PY'
 import json
-
 with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
-    text = f.read()
-
-payload = {"model": "BAAI/bge-m3", "input": text}
-with open("/tmp/vllm_embed_small.json", "w", encoding="utf-8") as out:
+    payload = {"model": "BAAI/bge-m3", "input": f.read()}
+with open("/tmp/vllm_embed.json", "w", encoding="utf-8") as out:
     json.dump(payload, out)
 PY
 
 for ENDPOINT in "${BACKENDS[@]}"; do
   tmpfile=$(mktemp)
 
-  seq 1 100 | xargs -P 20 -I{} bash -c '
+  seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
     curl -sS -o /dev/null \
-      -w "%{time_starttransfer} %{time_total}\n" \
+      -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
       -X POST "$1/v1/embeddings" \
       -H "Content-Type: application/json" \
       --data-binary @"$2"
-  ' _ "$ENDPOINT" "$SMALL_PAYLOAD" > "$tmpfile"
+  ' _ "$ENDPOINT" "$PAYLOAD" >"$tmpfile"
 
-  p99_ttfb=$(awk '{ print $1 }' "$tmpfile" | percentile_99)
-  p99_e2e=$(awk '{ print $2 }' "$tmpfile" | percentile_99)
+  success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
+  total=$(wc -l <"$tmpfile" | tr -d " ")
+  errors=$((total - success))
 
-  echo "backend=$ENDPOINT p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+  p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+  p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+
+  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
   rm -f "$tmpfile"
 done
 
-rm -f "$INPUT_FILE" "$SMALL_PAYLOAD"
+rm -f "$INPUT_FILE" "$PAYLOAD"
 ```
 
