@@ -33,81 +33,53 @@ SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
 TOTAL_REQUESTS=200
 CONCURRENCY_LEVELS=(20 60 100 140 180)
 
-SMALL_INPUT_CHARS=2000
-LARGE_INPUT_CHARS=8000
+INPUT_CHARS=2000
 
 RAW_TEXT=/tmp/wiki_raw.txt
-SMALL_TEXT=/tmp/wiki_small.txt
-LARGE_TEXT=/tmp/wiki_large.txt
-SMALL_PAYLOAD_FILE=/tmp/embed_small_payload.json
-LARGE_PAYLOAD_FILE=/tmp/embed_large_payload.json
+TEXT=/tmp/wiki_small.txt
+PAYLOAD_FILE=/tmp/embed_small_payload.json
 
+# prepare text
 curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c >"$RAW_TEXT"
+head -c "$INPUT_CHARS" "$RAW_TEXT" >"$TEXT"
 
-head -c "$SMALL_INPUT_CHARS" "$RAW_TEXT" >"$SMALL_TEXT"
-head -c "$LARGE_INPUT_CHARS" "$RAW_TEXT" >"$LARGE_TEXT"
-
+# build payload
 python3 - <<'PY'
 import json
-
-pairs = (
-    ("/tmp/wiki_small.txt", "/tmp/embed_small_payload.json"),
-    ("/tmp/wiki_large.txt", "/tmp/embed_large_payload.json"),
-)
-
-for text_path, payload_path in pairs:
-    with open(text_path, "r", encoding="utf-8", errors="ignore") as f:
-        payload = {"model": "BAAI/bge-m3", "input": f.read()}
-    with open(payload_path, "w", encoding="utf-8") as out:
-        json.dump(payload, out)
+with open("/tmp/wiki_small.txt", "r", encoding="utf-8", errors="ignore") as f:
+    payload = {"model": "BAAI/bge-m3", "input": f.read()}
+with open("/tmp/embed_small_payload.json", "w", encoding="utf-8") as out:
+    json.dump(payload, out)
 PY
 
-for SIZE in small large; do
-  if [ "$SIZE" = "small" ]; then
-    PAYLOAD_FILE=$SMALL_PAYLOAD_FILE
-  else
-    PAYLOAD_FILE=$LARGE_PAYLOAD_FILE
-  fi
+echo "================ SMALL TEST ================"
 
-  echo "=================================================="
-  echo "size=$SIZE"
-  echo "=================================================="
+for P in "${CONCURRENCY_LEVELS[@]}"; do
+  echo "concurrency=$P"
 
-  for P in "${CONCURRENCY_LEVELS[@]}"; do
-    echo "concurrency=$P"
+  for ENDPOINT in "${BACKENDS[@]}"; do
+    tmpfile=$(mktemp)
 
-    for ENDPOINT in "${BACKENDS[@]}"; do
-      tmpfile=$(mktemp)
+    seq 1 "$TOTAL_REQUESTS" | xargs -P "$P" -I{} bash -c '
+      curl -sS -o /dev/null \
+        -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
+        -X POST "$1/v1/embeddings" \
+        -H "Content-Type: application/json" \
+        --data-binary @"$2"
+    ' _ "$ENDPOINT" "$PAYLOAD_FILE" >"$tmpfile" 2>/dev/null
 
-      seq 1 "$TOTAL_REQUESTS" | xargs -P "$P" -I{} bash -c '
-        endpoint="$1"
-        payload_file="$2"
-        req_id="$3"
+    success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
+    errors=$((TOTAL_REQUESTS - success))
 
-        curl -sS -o /dev/null \
-          -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
-          -X POST "${endpoint}/v1/embeddings" \
-          -H "X-Request-Id: request_id_${req_id}" \
-          -H "X-Trace-Id: trace_id_${req_id}" \
-          -H "X-Session-Id: session_id_${req_id}" \
-          -H "Content-Type: application/json" \
-          --data-binary @"${payload_file}"
-      ' _ "$ENDPOINT" "$PAYLOAD_FILE" "{}" >"$tmpfile" 2>/dev/null
+    p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+    p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
 
-      success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
-      total=$(wc -l <"$tmpfile" | tr -d " ")
-      errors=$((TOTAL_REQUESTS - success))
+    echo "$ENDPOINT total=$TOTAL_REQUESTS success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
-      p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
-      p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
-
-      echo "$ENDPOINT size=$SIZE total=$TOTAL_REQUESTS success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
-
-      rm -f "$tmpfile"
-    done
-
-    echo
+    rm -f "$tmpfile"
   done
+
+  echo
 done
 ```
 
