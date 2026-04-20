@@ -297,3 +297,7 @@ done
 rm -f "$INPUT_FILE" "$PAYLOAD"
 ```
 
+```
+backend=http://192.168.86.173:8001 input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_ttfb=0.106968s p99_e2e=0.142153s
+backend=http://192.168.86.176:8001 input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_ttfb=0.151291s p99_e2e=0.231423s
+```
