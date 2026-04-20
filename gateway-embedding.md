@@ -162,7 +162,7 @@ backend=http://192.168.86.176:8001 type=direct input_chars=30000 approx_tokens=7
 backend=http://192.168.86.179:30181 type=gateway input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
 ```
 
-#### ================ LARGE TEST ================
+#### test concurrent with small tokens -> max-num-seqs
 ```
 percentile_99() {
   sort -n | awk '
