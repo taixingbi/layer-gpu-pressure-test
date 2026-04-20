@@ -164,15 +164,6 @@ backend=http://192.168.86.176:8001 type=direct input_chars=30000 approx_tokens=7
 backend=http://192.168.86.179:30181 type=gateway input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
 
 
-
-<div style="overflow-x: auto; white-space: nowrap;">
-
-```text
-backend=http://192.168.86.173:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.050657s p99_ttfb=0.110533s p99_e2e=0.243068s
-backend=http://192.168.86.176:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.141611s p99_ttfb=0.276727s p99_e2e=0.715379s
-backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_connect=0.308159s p99_ttfb=0.630069s p99_e2e=1.019490s
-
-
 #### test concurrent with small tokens -> max-num-seqs
 ```
 percentile_99() {
