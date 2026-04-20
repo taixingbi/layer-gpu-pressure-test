@@ -162,78 +162,6 @@ backend=http://192.168.86.173:8001 input_chars=30000 approx_tokens=7500 total=10
 backend=http://192.168.86.176:8001 input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_ttfb=NAs p99_e2e=NAs
 ```
 
-## test concurrent with large tokens ->  max-num-seqs
-
-```bash
-percentile_99() {
-  sort -n | awk '
-    { a[NR] = $1 }
-    END {
-      if (NR == 0) { print "NA"; exit }
-      idx = int(NR * 0.99)
-      if (idx < 1) idx = 1
-      print a[idx]
-    }'
-}
-
-BACKENDS=(
-  "http://192.168.86.173:8001"
-  "http://192.168.86.176:8001"
-)
-
-SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
-TOTAL_REQUESTS=500
-CONCURRENCY=80
-INPUT_CHARS=8000
-
-INPUT_FILE=/tmp/vllm_embed_input.txt
-LARGE_PAYLOAD=/tmp/vllm_embed_large.json
-
-curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" >"$INPUT_FILE"
-
-raw_chars=$(wc -c <"$INPUT_FILE" | tr -d ' ')
-approx_tokens=$(( raw_chars / 4 ))
-
-echo "input_chars=$raw_chars approx_tokens=$approx_tokens"
-
-python3 - <<'PY'
-import json
-
-with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
-    payload = {"model": "BAAI/bge-m3", "input": f.read()}
-with open("/tmp/vllm_embed_large.json", "w", encoding="utf-8") as out:
-    json.dump(payload, out)
-PY
-
-for ENDPOINT in "${BACKENDS[@]}"; do
-  tmpfile=$(mktemp)
-  seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
-    curl -sS -o /dev/null \
-      -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
-      -X POST "$1/v1/embeddings" \
-      -H "Content-Type: application/json" \
-      --data-binary @'"$LARGE_PAYLOAD"'
-  ' _ "$ENDPOINT" >"$tmpfile"
-
-  success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
-  total=$(wc -l <"$tmpfile" | tr -d " ")
-  errors=$((total - success))
-
-  p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
-  p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
-
-  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
-  rm -f "$tmpfile"
-done
-```
-
-Sample output:
-
-```
-backend=http://192.168.86.173:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.804165s p99_e2e=2.815436s
-backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.743120s p99_e2e=2.754391s
-```
-
 
 
 
@@ -307,3 +235,77 @@ rm -f "$INPUT_FILE" "$PAYLOAD"
 backend=http://192.168.86.173:8001 input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_ttfb=0.106968s p99_e2e=0.142153s
 backend=http://192.168.86.176:8001 input_chars=300 approx_tokens=75 total=500 success=500 errors=0 p99_ttfb=0.151291s p99_e2e=0.231423s
 ```
+
+
+## test concurrent with large tokens ->  max-num-seqs
+
+```bash
+percentile_99() {
+  sort -n | awk '
+    { a[NR] = $1 }
+    END {
+      if (NR == 0) { print "NA"; exit }
+      idx = int(NR * 0.99)
+      if (idx < 1) idx = 1
+      print a[idx]
+    }'
+}
+
+BACKENDS=(
+  "http://192.168.86.173:8001"
+  "http://192.168.86.176:8001"
+)
+
+SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
+TOTAL_REQUESTS=500
+CONCURRENCY=80
+INPUT_CHARS=8000
+
+INPUT_FILE=/tmp/vllm_embed_input.txt
+LARGE_PAYLOAD=/tmp/vllm_embed_large.json
+
+curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" >"$INPUT_FILE"
+
+raw_chars=$(wc -c <"$INPUT_FILE" | tr -d ' ')
+approx_tokens=$(( raw_chars / 4 ))
+
+echo "input_chars=$raw_chars approx_tokens=$approx_tokens"
+
+python3 - <<'PY'
+import json
+
+with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
+    payload = {"model": "BAAI/bge-m3", "input": f.read()}
+with open("/tmp/vllm_embed_large.json", "w", encoding="utf-8") as out:
+    json.dump(payload, out)
+PY
+
+for ENDPOINT in "${BACKENDS[@]}"; do
+  tmpfile=$(mktemp)
+  seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
+    curl -sS -o /dev/null \
+      -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
+      -X POST "$1/v1/embeddings" \
+      -H "Content-Type: application/json" \
+      --data-binary @'"$LARGE_PAYLOAD"'
+  ' _ "$ENDPOINT" >"$tmpfile"
+
+  success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
+  total=$(wc -l <"$tmpfile" | tr -d " ")
+  errors=$((total - success))
+
+  p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+  p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+
+  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+  rm -f "$tmpfile"
+done
+```
+
+Sample output:
+
+```
+backend=http://192.168.86.173:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.804165s p99_e2e=2.815436s
+backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.743120s p99_e2e=2.754391s
+```
+
