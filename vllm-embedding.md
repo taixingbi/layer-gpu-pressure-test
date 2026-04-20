@@ -41,7 +41,7 @@ ttfb=0.090159s
 e2e=0.106381s
 ```
 
-## test max tokens
+## test tokens -> max-model-len
 
 ```bash
 cat >/tmp/bench_embed.sh <<'EOF'
