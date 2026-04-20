@@ -10,7 +10,7 @@ curl -sS -o /tmp/embed_resp.json \
   -H "Content-Type: application/json" \
   -d '{"model":"BAAI/bge-m3","input":"hello world"}'
 ```
-#### ================ SMALL TEST ================
+#### test tokens -> max-model-len
 
 ```bash
 cat >/tmp/bench_embed.sh <<'EOF'
@@ -136,31 +136,30 @@ bash /tmp/bench_embed.sh
 Sample output (reference):
 
 ```
-================ SMALL TEST ================
-concurrency=20
-http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.174752s p99_e2e=0.187715s
-http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.540942s p99_e2e=0.629698s
-http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+================ SIZE=5000 =================
+backend=http://192.168.86.173:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.021955s p99_ttfb=0.409331s p99_e2e=0.420935s
+backend=http://192.168.86.176:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.017475s p99_ttfb=0.398404s p99_e2e=0.411136s
+backend=http://192.168.86.179:30181 type=gateway input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.049222s p99_ttfb=0.426182s p99_e2e=0.454256s
 
-concurrency=60
-http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.313707s p99_e2e=0.327615s
-http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.318511s p99_e2e=0.351055s
-http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+================ SIZE=10000 =================
+backend=http://192.168.86.173:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.017799s p99_ttfb=0.963546s p99_e2e=0.973953s
+backend=http://192.168.86.176:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.047261s p99_ttfb=0.960085s p99_e2e=0.971856s
+backend=http://192.168.86.179:30181 type=gateway input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.043642s p99_ttfb=0.938038s p99_e2e=0.974017s
 
-concurrency=100
-http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.525701s p99_e2e=0.542246s
-http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.515646s p99_e2e=0.529888s
-http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+================ SIZE=13000 =================
+backend=http://192.168.86.173:8001 type=direct input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 type=direct input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.179:30181 type=gateway input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
 
-concurrency=140
-http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.654717s p99_e2e=0.665506s
-http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.586319s p99_e2e=0.597465s
-http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+================ SIZE=15000 =================
+backend=http://192.168.86.173:8001 type=direct input_chars=15000 approx_tokens=3750 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 type=direct input_chars=15000 approx_tokens=3750 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.179:30181 type=gateway input_chars=15000 approx_tokens=3750 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
 
-concurrency=180
-http://192.168.86.173:8001 total=200 success=200 errors=0 p99_ttfb=0.750949s p99_e2e=0.763222s
-http://192.168.86.176:8001 total=200 success=200 errors=0 p99_ttfb=0.613822s p99_e2e=0.625734s
-http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=NAs
+================ SIZE=30000 =================
+backend=http://192.168.86.173:8001 type=direct input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.176:8001 type=direct input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
+backend=http://192.168.86.179:30181 type=gateway input_chars=30000 approx_tokens=7500 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
 ```
 
 #### ================ LARGE TEST ================
