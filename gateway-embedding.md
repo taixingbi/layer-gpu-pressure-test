@@ -135,7 +135,9 @@ bash /tmp/bench_embed.sh
 
 Sample output (reference):
 
-```
+<div style="overflow-x: auto; white-space: nowrap;">
+
+```text
 ================ SIZE=5000 =================
 backend=http://192.168.86.173:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.021955s p99_ttfb=0.409331s p99_e2e=0.420935s
 backend=http://192.168.86.176:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.017475s p99_ttfb=0.398404s p99_e2e=0.411136s
