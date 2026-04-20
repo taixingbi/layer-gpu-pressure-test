@@ -271,5 +271,79 @@ backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=7
 ```
 
 
+```
+percentile_99() {
+  sort -n | awk '
+    { a[NR] = $1 }
+    END {
+      if (NR == 0) { print "NA"; exit }
+      idx = int(NR * 0.99)
+      if (idx < 1) idx = 1
+      print a[idx]
+    }'
+}
 
+BACKENDS=(
+  "http://192.168.86.173:8001"
+  "http://192.168.86.176:8001"
+)
+
+SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
+TOTAL_REQUESTS=500
+CONCURRENCY=80
+INPUT_CHARS=8000
+
+INPUT_FILE=/tmp/vllm_embed_input.txt
+LARGE_PAYLOAD=/tmp/vllm_embed_large.json
+
+curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" > "$INPUT_FILE"
+
+raw_chars=$(wc -c < "$INPUT_FILE" | tr -d ' ')
+approx_tokens=$(( raw_chars / 4 ))
+
+echo "input_chars=$raw_chars approx_tokens=$approx_tokens"
+
+python3 - <<'PY'
+import json
+
+with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
+    payload = {"model": "BAAI/bge-m3", "input": f.read()}
+with open("/tmp/vllm_embed_large.json", "w", encoding="utf-8") as out:
+    json.dump(payload, out)
+PY
+
+for ENDPOINT in "${BACKENDS[@]}"; do
+  tmpfile=$(mktemp)
+
+  seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
+    endpoint="$1"
+    payload="$2"
+
+    curl -sS -o /dev/null \
+      -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
+      -X POST "$endpoint/v1/embeddings" \
+      -H "Content-Type: application/json" \
+      --data-binary @"$payload"
+  ' _ "$ENDPOINT" "$LARGE_PAYLOAD" > "$tmpfile" 2>/dev/null
+
+  success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
+  total=$(wc -l < "$tmpfile" | tr -d ' ')
+  errors=$((total - success))
+
+  p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+  p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+
+  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+
+  rm -f "$tmpfile"
+done
+```
+
+
+```
+input_chars=8000 approx_tokens=2000
+backend=http://192.168.86.173:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.027410s p99_ttfb=2.800418s p99_e2e=2.811520s
+backend=http://192.168.86.176:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.082806s p99_ttfb=2.746010s p99_e2e=2.759594s
+backend=http://192.168.86.179:30181 type=gateway input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.127536s p99_ttfb=2.738428s p99_e2e=2.766894s
+```
 
