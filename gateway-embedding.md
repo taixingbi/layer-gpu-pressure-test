@@ -163,7 +163,7 @@ backend=http://192.168.86.179:30181 type=gateway input_chars=30000 approx_tokens
 
 
 #### test concurrent with small tokens -> max-num-seqs
-```
+```bash
 percentile_99() {
   sort -n | awk '
     { a[NR] = $1 }
@@ -271,7 +271,7 @@ backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=7
 ```
 
 
-```
+```bash
 percentile_99() {
   sort -n | awk '
     { a[NR] = $1 }
