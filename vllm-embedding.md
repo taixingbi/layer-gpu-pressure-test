@@ -224,9 +224,8 @@ done
 Sample output:
 
 ```
-input_chars=8000 approx_tokens=2000
-backend=http://192.168.86.173:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.810370s p99_e2e=2.823406s
-backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.713273s p99_e2e=2.727671s
+backend=http://192.168.86.173:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.804165s p99_e2e=2.815436s
+backend=http://192.168.86.176:8001 input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_ttfb=2.743120s p99_e2e=2.754391s
 ```
 
 
