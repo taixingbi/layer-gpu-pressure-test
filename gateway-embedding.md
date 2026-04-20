@@ -115,6 +115,82 @@ http://192.168.86.179:30181 total=200 success=0 errors=200 p99_ttfb=NAs p99_e2e=
 ```
 
 #### ================ LARGE TEST ================
+```
+percentile_99() {
+  sort -n | awk '
+    { a[NR] = $1 }
+    END {
+      if (NR == 0) { print "NA"; exit }
+      idx = int(NR * 0.99)
+      if (idx < 1) idx = 1
+      print a[idx]
+    }'
+}
+
+BACKENDS=(
+  "http://192.168.86.173:8001"
+  "http://192.168.86.176:8001"
+  "http://192.168.86.179:30181"
+)
+
+SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
+TOTAL_REQUESTS=200
+CONCURRENCY_LEVELS=(20 60 100 140 180)
+
+INPUT_CHARS=8000
+
+RAW_TEXT=/tmp/wiki_raw.txt
+TEXT=/tmp/wiki_large.txt
+PAYLOAD_FILE=/tmp/embed_large_payload.json
+
+# prepare text
+curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c >"$RAW_TEXT"
+head -c "$INPUT_CHARS" "$RAW_TEXT" >"$TEXT"
+
+# build payload
+python3 - <<'PY'
+import json
+with open("/tmp/wiki_large.txt", "r", encoding="utf-8", errors="ignore") as f:
+    payload = {"model": "BAAI/bge-m3", "input": f.read()}
+with open("/tmp/embed_large_payload.json", "w", encoding="utf-8") as out:
+    json.dump(payload, out)
+PY
+
+echo "================ LARGE TEST ================"
+
+for P in "${CONCURRENCY_LEVELS[@]}"; do
+  echo "concurrency=$P"
+
+  for ENDPOINT in "${BACKENDS[@]}"; do
+    tmpfile=$(mktemp)
+
+    seq 1 "$TOTAL_REQUESTS" | xargs -P "$P" -I{} bash -c '
+      curl -sS -o /dev/null \
+        -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
+        -X POST "$1/v1/embeddings" \
+        -H "Content-Type: application/json" \
+        --data-binary @"$2"
+    ' _ "$ENDPOINT" "$PAYLOAD_FILE" >"$tmpfile" 2>/dev/null
+
+    success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
+    errors=$((TOTAL_REQUESTS - success))
+
+    p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+    p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+
+    echo "$ENDPOINT total=$TOTAL_REQUESTS success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+
+    rm -f "$tmpfile"
+  done
+
+  echo
+done
+```
+
+```
+
+```
+
 
 
 
