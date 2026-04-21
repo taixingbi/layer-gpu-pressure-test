@@ -368,14 +368,14 @@ bash /tmp/bench_embed.sh
 
 ```
 ================ SIZE=5000 =================
-backend=http://192.168.86.173:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.021955s p99_ttfb=0.409331s p99_e2e=0.420935s
-backend=http://192.168.86.176:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.017475s p99_ttfb=0.398404s p99_e2e=0.411136s
-backend=http://192.168.86.179:30181 type=gateway input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.049222s p99_ttfb=0.426182s p99_e2e=0.454256s
+backend=http://192.168.86.173:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.081760s p99_ttfb=0.450877s p99_e2e=0.504024s
+backend=http://192.168.86.176:8001 type=direct input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.114259s p99_ttfb=0.503978s p99_e2e=0.513920s
+backend=http://192.168.86.179:30181 type=gateway input_chars=5000 approx_tokens=1250 total=100 success=100 errors=0 p99_connect=0.100759s p99_ttfb=0.294396s p99_e2e=0.364988s
 
 ================ SIZE=10000 =================
-backend=http://192.168.86.173:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.017799s p99_ttfb=0.963546s p99_e2e=0.973953s
-backend=http://192.168.86.176:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.047261s p99_ttfb=0.960085s p99_e2e=0.971856s
-backend=http://192.168.86.179:30181 type=gateway input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.043642s p99_ttfb=0.938038s p99_e2e=0.974017s
+backend=http://192.168.86.173:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.076935s p99_ttfb=1.015813s p99_e2e=1.025489s
+backend=http://192.168.86.176:8001 type=direct input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.022666s p99_ttfb=0.965434s p99_e2e=0.990459s
+backend=http://192.168.86.179:30181 type=gateway input_chars=10000 approx_tokens=2500 total=100 success=100 errors=0 p99_connect=0.120890s p99_ttfb=0.568452s p99_e2e=0.608738s
 
 ================ SIZE=13000 =================
 backend=http://192.168.86.173:8001 type=direct input_chars=13000 approx_tokens=3250 total=100 success=0 errors=100 p99_connect=NAs p99_ttfb=NAs p99_e2e=NAs
