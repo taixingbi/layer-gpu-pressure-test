@@ -131,6 +131,7 @@ percentile_99() {
       if (NR == 0) { print "NA"; exit }
       idx = int(NR * 0.99)
       if (idx < 1) idx = 1
+      if (idx > NR) idx = NR
       print a[idx]
     }'
 }
@@ -138,6 +139,7 @@ percentile_99() {
 BACKENDS=(
   "http://192.168.86.173:8001"
   "http://192.168.86.176:8001"
+  "http://192.168.86.179:30181"
 )
 
 SOURCE_URL="https://en.wikipedia.org/wiki/New_York_City"
@@ -146,9 +148,19 @@ CONCURRENCY=80
 INPUT_CHARS=8000
 
 INPUT_FILE=/tmp/vllm_embed_input.txt
-LARGE_PAYLOAD=/tmp/vllm_embed_large.json
+PAYLOAD=/tmp/vllm_embed.json
 
-curl -fsSL "$SOURCE_URL" | lynx -dump -stdin | iconv -f utf-8 -t utf-8 -c | head -c "$INPUT_CHARS" > "$INPUT_FILE"
+echo "NOTE:"
+echo "- 192.168.86.173:8001 and 192.168.86.176:8001 are direct backend tests."
+echo "- 192.168.86.179:30181 is the gateway test."
+echo "- Gateway results are not perfectly apples-to-apples with direct backend results."
+echo "- The gateway path adds proxy/routing overhead."
+echo "- Gateway requests include X-Request-Id / X-Trace-Id / X-Session-Id headers."
+
+curl -fsSL "$SOURCE_URL" \
+  | lynx -dump -stdin \
+  | iconv -f utf-8 -t utf-8 -c \
+  | head -c "$INPUT_CHARS" > "$INPUT_FILE"
 
 raw_chars=$(wc -c < "$INPUT_FILE" | tr -d ' ')
 approx_tokens=$(( raw_chars / 4 ))
@@ -160,35 +172,63 @@ import json
 
 with open("/tmp/vllm_embed_input.txt", "r", encoding="utf-8", errors="ignore") as f:
     payload = {"model": "BAAI/bge-m3", "input": f.read()}
-with open("/tmp/vllm_embed_large.json", "w", encoding="utf-8") as out:
+
+with open("/tmp/vllm_embed.json", "w", encoding="utf-8") as out:
     json.dump(payload, out)
 PY
 
 for ENDPOINT in "${BACKENDS[@]}"; do
   tmpfile=$(mktemp)
 
-  seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
-    endpoint="$1"
-    payload="$2"
+  if [[ "$ENDPOINT" == "http://192.168.86.179:30181" ]]; then
+    target_type="gateway"
 
-    curl -sS -o /dev/null \
-      -w "%{http_code} %{time_starttransfer} %{time_total}\n" \
-      -X POST "$endpoint/v1/embeddings" \
-      -H "Content-Type: application/json" \
-      --data-binary @"$payload"
-  ' _ "$ENDPOINT" "$LARGE_PAYLOAD" > "$tmpfile" 2>/dev/null
+    seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
+      i="$1"
+      endpoint="$2"
+      payload="$3"
+
+      curl -sS -o /dev/null \
+        -w "%{http_code} %{time_connect} %{time_starttransfer} %{time_total}\n" \
+        -X POST "$endpoint/v1/embeddings" \
+        -H "X-Request-Id: request_id_$i" \
+        -H "X-Trace-Id: trace_id_$i" \
+        -H "X-Session-Id: session_id_$i" \
+        -H "Content-Type: application/json" \
+        --data-binary @"$payload"
+    ' _ {} "$ENDPOINT" "$PAYLOAD" > "$tmpfile" 2>/dev/null
+  else
+    target_type="direct"
+
+    seq 1 "$TOTAL_REQUESTS" | xargs -P "$CONCURRENCY" -I{} bash -c '
+      endpoint="$1"
+      payload="$2"
+
+      curl -sS -o /dev/null \
+        -w "%{http_code} %{time_connect} %{time_starttransfer} %{time_total}\n" \
+        -X POST "$endpoint/v1/embeddings" \
+        -H "Content-Type: application/json" \
+        --data-binary @"$payload"
+    ' _ "$ENDPOINT" "$PAYLOAD" > "$tmpfile" 2>/dev/null
+  fi
 
   success=$(awk '$1 == "200" { c++ } END { print c + 0 }' "$tmpfile")
   total=$(wc -l < "$tmpfile" | tr -d ' ')
   errors=$((total - success))
 
-  p99_ttfb=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
-  p99_e2e=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+  p99_connect=$(awk '$1 == "200" { print $2 }' "$tmpfile" | percentile_99)
+  p99_ttfb=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
+  p99_e2e=$(awk '$1 == "200" { print $4 }' "$tmpfile" | percentile_99)
 
-  echo "backend=$ENDPOINT input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+  total_e2e=$(awk '$1 == "200" { sum += $4 } END { printf "%.6f", sum + 0 }' "$tmpfile")
+  avg_e2e=$(awk '$1 == "200" { sum += $4; c++ } END { if (c == 0) print "NA"; else printf "%.6f", sum / c }' "$tmpfile")
+
+  echo "backend=$ENDPOINT type=$target_type input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors total_e2e=${total_e2e}s avg_e2e=${avg_e2e}s p99_connect=${p99_connect}s p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
   rm -f "$tmpfile"
 done
+
+rm -f "$INPUT_FILE" "$PAYLOAD"
 ```
 
 
