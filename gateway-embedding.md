@@ -256,7 +256,10 @@ for ENDPOINT in "${BACKENDS[@]}"; do
   p99_ttfb=$(awk '$1 == "200" { print $3 }' "$tmpfile" | percentile_99)
   p99_e2e=$(awk '$1 == "200" { print $4 }' "$tmpfile" | percentile_99)
 
-  echo "backend=$ENDPOINT type=$target_type input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors p99_connect=${p99_connect}s p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
+  total_e2e=$(awk '$1 == "200" { sum += $4 } END { printf "%.6f", sum + 0 }' "$tmpfile")
+  avg_e2e=$(awk '$1 == "200" { sum += $4; c++ } END { if (c == 0) print "NA"; else printf "%.6f", sum / c }' "$tmpfile")
+
+  echo "backend=$ENDPOINT type=$target_type input_chars=$raw_chars approx_tokens=$approx_tokens total=$total success=$success errors=$errors total_e2e=${total_e2e}s avg_e2e=${avg_e2e}s p99_connect=${p99_connect}s p99_ttfb=${p99_ttfb}s p99_e2e=${p99_e2e}s"
 
   rm -f "$tmpfile"
 done
