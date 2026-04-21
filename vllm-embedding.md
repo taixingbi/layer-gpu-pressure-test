@@ -18,6 +18,23 @@ curl -sS -o /tmp/embed_resp.json \
   -d '{"model":"BAAI/bge-m3","input":"hello world"}'
 ```
 
+```bash
+URL1="http://192.168.86.173:8001/v1/embeddings"
+URL2="http://192.168.86.176:8001/v1/embeddings"
+BODY='{"model":"BAAI/bge-m3","input":"test"}'
+
+for URL in "$URL1" "$URL2"; do
+  echo "=== $URL ==="
+  curl -sS -o /dev/null -w \
+'namelookup:%{time_namelookup}s connect:%{time_connect}s appconnect:%{time_appconnect}s pretransfer:%{time_pretransfer}s starttransfer:%{time_starttransfer}s total:%{time_total}s\n' \
+    -X POST "$URL" \
+    -H 'Content-Type: application/json' \
+    -H 'X-Request-Id: curl-1' -H 'X-Trace-Id: curl-1' -H 'X-Session-Id: curl-1' \
+    -d "$BODY"
+done
+```
+
+
 Example timing:
 
 ```
