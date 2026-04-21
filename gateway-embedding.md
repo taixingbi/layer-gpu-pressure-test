@@ -117,9 +117,9 @@ rm -f "$INPUT_FILE" "$PAYLOAD"
 ```
 
 ```
-backend=http://192.168.86.173:8001 type=direct input_chars=0 approx_tokens=0 total=500 success=500 errors=0 total_e2e=127.097766s avg_e2e=0.254196s p99_connect=0.121965s p99_ttfb=0.258461s p99_e2e=0.362600s
-backend=http://192.168.86.176:8001 type=direct input_chars=0 approx_tokens=0 total=500 success=500 errors=0 total_e2e=135.712464s avg_e2e=0.271425s p99_connect=0.151860s p99_ttfb=0.270207s p99_e2e=0.363067s
-backend=http://192.168.86.179:30181 type=gateway input_chars=0 approx_tokens=0 total=500 success=500 errors=0 total_e2e=198.312169s avg_e2e=0.396624s p99_connect=0.204450s p99_ttfb=0.374385s p99_e2e=0.527668s
+backend=http://192.168.86.173:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 total_e2e=47.660946s avg_e2e=0.095322s p99_connect=0.055897s p99_ttfb=0.128292s p99_e2e=0.167418s
+backend=http://192.168.86.176:8001 type=direct input_chars=300 approx_tokens=75 total=500 success=500 errors=0 total_e2e=166.241936s avg_e2e=0.332484s p99_connect=0.205537s p99_ttfb=0.408364s p99_e2e=0.650701s
+backend=http://192.168.86.179:30181 type=gateway input_chars=300 approx_tokens=75 total=500 success=500 errors=0 total_e2e=411.943362s avg_e2e=0.823887s p99_connect=0.460306s p99_ttfb=1.219513s p99_e2e=2.157005s
 ```
 
 test concurrent with large tokens -> max-num-seqs
