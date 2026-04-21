@@ -18,6 +18,7 @@ curl -sS -o /tmp/embed_resp.json \
   -d '{"model":"BAAI/bge-m3","input":"hello world"}'
 ```
 
+##### test network
 ```bash
 URL1="http://192.168.86.173:8001/v1/embeddings"
 URL2="http://192.168.86.176:8001/v1/embeddings"
