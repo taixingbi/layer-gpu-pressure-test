@@ -122,6 +122,7 @@ backend=http://192.168.86.176:8001 type=direct input_chars=0 approx_tokens=0 tot
 backend=http://192.168.86.179:30181 type=gateway input_chars=0 approx_tokens=0 total=500 success=500 errors=0 total_e2e=198.312169s avg_e2e=0.396624s p99_connect=0.204450s p99_ttfb=0.374385s p99_e2e=0.527668s
 ```
 
+test concurrent with large tokens -> max-num-seqs
 
 ```bash
 percentile_99() {
@@ -234,9 +235,9 @@ rm -f "$INPUT_FILE" "$PAYLOAD"
 
 ```
 input_chars=8000 approx_tokens=2000
-backend=http://192.168.86.173:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.027410s p99_ttfb=2.800418s p99_e2e=2.811520s
-backend=http://192.168.86.176:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.082806s p99_ttfb=2.746010s p99_e2e=2.759594s
-backend=http://192.168.86.179:30181 type=gateway input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 p99_connect=0.127536s p99_ttfb=2.738428s p99_e2e=2.766894s
+backend=http://192.168.86.173:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 total_e2e=1285.583684s avg_e2e=2.571167s p99_connect=0.021638s p99_ttfb=2.800071s p99_e2e=2.811892s
+backend=http://192.168.86.176:8001 type=direct input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 total_e2e=1265.091164s avg_e2e=2.530182s p99_connect=0.024145s p99_ttfb=2.753359s p99_e2e=2.764730s
+backend=http://192.168.86.179:30181 type=gateway input_chars=8000 approx_tokens=2000 total=500 success=500 errors=0 total_e2e=644.332029s avg_e2e=1.288664s p99_connect=0.218935s p99_ttfb=1.406733s p99_e2e=1.485793s
 ```
 
 
